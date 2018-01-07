@@ -56,6 +56,8 @@ void setup()
 
 //  Works OK to here! *******************************************************************
 
+//********************    A minor change to test interaction with GitHub.  ************************
+
 /*  Notes regarding the LCD:
   lcd.setCursor - first column is 0, not 1 - similarly first row is 0, not 1!
 
