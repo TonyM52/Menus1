@@ -1,178 +1,231 @@
-/* This sketch is based on Buttons3.  
+/* This sketch is based on Buttons3.
+  It is intended to provide an outline Menu / Sub-menu system based around the control buttons on the LCD shield,
+  with the manoeuvring in any menu done via Up / Down, Right taking you into a sub-menu, Left taking you back up
+  a level, snd Select initiating an action (where appropriate).
 
-It is intended to provide an outline Menu / Sub-menu system based around the control buttons on the LCD shield,
-with the manoeuvring in any menu done via Up / Down, Right taking you into a sub-menu, Left taking you back up 
 a level, snd Select initiating an action (where appropriate).
+// Call libraries:
 
-Going back up a level could also be done using an Exit selection within the menu. */
+#include <hd44780.h>
+#include <hd44780ioClass/hd44780_pinIO.h> // Arduino pin i/o class header
 
+//  LCD stuff:
 
-      // Call libraries:
-      #include <hd44780.h>
-      #include <hd44780ioClass/hd44780_pinIO.h> // Arduino pin i/o class header
+/*  Notes regarding the LCD:
+  lcd.setCursor - first column is 0, not 1 - similarly first row is 0, not 1!
 
-//  declare Arduino pins used for LCD functions and the lcd object:
+  The buttons return the following analogue read values:
+  Right     - 0     Up        - 99      Down      - 254
+  Left      - 407   Select    - 639     No press  - 1023
+*/
 
-      // Define LCD pinout:
-      const int rs=8, en=9, db4=4, db5=5, db6=6, db7=7;
-      hd44780_pinIO lcd(rs, en, db4, db5, db6, db7);
+// Define LCD pinout:
 
-      // Define LCD geometry
-      const int LCD_COLS = 16;
-      const int LCD_ROWS = 2;
+const int rs = 8, en = 9, db4 = 4, db5 = 5, db6 = 6, db7 = 7;
+hd44780_pinIO lcd(rs, en, db4, db5, db6, db7);
 
-      // Define variables for display on LCD:
-      String LCDline1;
-      String LCDline2;
+// Define LCD geometry
 
+const int LCD_COLS = 16;
+const int LCD_ROWS = 2;
 
-void LCDprintfunction () {  //Defines the LCDprintfunction to provide a simple means of outputting.
-      lcd.clear();
-      lcd.print(LCDline1);
-      lcd.setCursor(0,1);
-      lcd.print(LCDline2);
-      return;
+// Define variables for display on LCD:
+String LCDline1;
+String LCDline2;
+
+//Defines the LCDprintfunction to provide a simple means of outputting.
+
+void LCDprintfunction () {  
+  
+  return;
 }
+
+// Define global variables:
+
+int menurow = 0;        // Row position
+int menucol = 0;        // Column position
+int menurowmin = 0;     // Minimum allowable value of menurow
+int menurowmax = 6;     // Maximum allowable value of menurow
+int menucolmin = 0;     // Minimum allowable value of menucol
+int menucolmax = 1;     // Maximum allowable value of menucol
+int menurowlast = 20;
+int menucollast = 20;
+char* menutext;
+int getstart = 0;
+int oldgetstart = 0;
+int returnval;
 
 
 void setup()
 {
   Serial.begin(9600);
-  
-  // initialize LCD with number of columns and rows: 
-  
+
+  // initialize LCD with number of columns and rows:
+
   lcd.begin(LCD_COLS, LCD_ROWS);
 
-  
+ re_initiate:
   // Print a preliminary message to the LCD
+
+  LCDline1 = "Menu: Select";
+  LCDline2 = "to start ..";
+  LCDprintfunction();
   
-      LCDline1 = "Menu: Select";
-      LCDline2 = "to start ..";
-      LCDprintfunction();
-      delay(100);
+  Serial.println("Printed preliminary message on LCD.");  delay(1000);
 
-  // end of setup loop
+  // Confirm start of menu operations:
+  //  Read the analog value produced by pressing the button.
+  
+  do{
+  int returnval = analogRead(0);
+  
+  // Note: with no button pressed, the analogue read returns a value of 1023,
+  // so a statement is needed to catch values over 1000.
+
+  //Detect initial decision to access menu using Select button.
+  
+  if (returnval >= 550 && returnval <= 650) {
+    getstart = 1;
+
+    if (getstart != oldgetstart) {
+      Serial.print ("In Getstart function: Getstart = "), Serial.println (getstart);
+      Serial.print ("In Getstart function: returnval = "), Serial.println (returnval);
+    }
+    oldgetstart = getstart;
+  }
+  delay(2000);
+  } while (getstart != 1);
+  
+} // end of setup loop
+
+
+void do_menu_action() { //Function to handle the actions:
+
+  Serial.println("In ""Do Action"" function");
+
+  if (menurow == 0 && menucol == 0 && returnval <650 && returnval > 550) {
+    getstart = 0;
+    goto re_initiate;
+  }
+  
+  delay (100);
+  return;
 }
 
-//  Works OK to here! *******************************************************************
 
-//********************    A minor change to test interaction with GitHub.  ************************
-
-/*  Notes regarding the LCD:
-  lcd.setCursor - first column is 0, not 1 - similarly first row is 0, not 1!
-
-The buttons return the following analogue read values:
-  Right     - 0
-  Up        - 99
-  Down      - 254
-  Left      - 407
-  Select    - 639
-  No press  - 1023
-*/
-
-
-// Define initial variables:
-
-String laststatename;
-
-
-int getstart = 0;
-
-void getstartfn() {
-//  Read the analog value produced by pressing the button.
-      int returnval = analogRead(0);     
-      // Note: with no button pressed, the analogue read returns a value of 1023, 
-      // so a statement is needed to catch values over 1000.
-      
-      //Detect initial decision to access menu using Select button.
-      if (returnval>=550 && returnval<=650) {getstart = 1;}
-      else getstart = 0;
-      return;
-}
-
-void menumovefn() {
-
-
-
-
-return;  
-}
 
 void loop() {
   // put your main code here, to run repeatedly
+int returnval = 1023;
 
-int menulevel;
-int menuitem;
-int menulevelmin = 0;
-int menulevelmax = 1;
-int menuitemmin = 0;
-int menuitemmax = 4;   // deon't think this is going to work - different values dependant on the menu.
+  Serial.println();
+  Serial.println ("Start of main loop:");
 
-   getstartfn();
-   if (getstart==1){  //Have we decided to access the menu system?
+    /*  Consider a two-level menu system:  Menu A is the top level, and is developed with 4 options.
+        Assume options Menu A1  and Menu A3 each have sub-menus, with the 0 option for each being Exit (up a level)
+        and options Menu A2 and Menu A4 have individuaal actions called from functions.
+        Sub-menus for A1 and A3 each have 3 options.
+        Overall dimensions of the menu array are thus 5 (rows) x 2 (columns) - i.e.:
 
-      /*  Consider a two-level menu system:  Menu A is the top level, and is developed with 4 options.
-       *  Assume options Menu A1  and Menu A3 each have sub-menus, with the 0 option for each being Exit (up a level)
-       *  and options Menu A2 and Menu A4 have individuaal actions called from functions.
-       *  Sub-menus for A1 and A3 each have 3 options.
-       */
-   
-      // Define the string variables to represent the menu choices in main menu A.
-      const char* Menu_top_string[]={"Exit", "Motor", "Blink LED fast", "Light", "Blink LED slow"};  //This could continue if needed!
+        Top menu:         Item:
+        Exit              Null        Select on Exit:  go back to start
+        Motor             Motor On    Select on Motor On:  Start motor running
+        Motor             Motor Off   Select on Motor Off:  Turn motor off
+        Blink LED fast    Null        Select on Blink LED fast:  Run the Blink Fast function (self-exits).
+        Light             Light On    Select on Light on:  Turn light on.
+        Light             Light Off   Select on Light off:  Turn light off.
+        Blink LED slow    Null        Select on Blink LED slow:  Run the Blink Slow function (self-exits).
+    */
 
-       // Define the string variables to represent the menu choices in sub-menu A1.
-      const char* Menu_A1_string[]={"Exit", "Motor ON", "Motor OFF"};
-       
-      // Define the string variables to represent the menu choices in sub-menu A3.
-      const char* Menu_A3_string[]={"Exit", "Light ON", "Light OFF"};
-     
+  // Define the string variables to represent the menu choices in Columns 1 and 2:
+  
+  char* Menu_Column_1[] = {"Exit", "Motor", "Motor", "Blink LED fast", "Light", "Light", "Blink LED slow"}; //This could continue if needed!
+  char* Menu_Column_2[] = {"Null", "Motor ON", "Motor OFF", "Null", "Light ON", "Light OFF", "Null" };
 
+    Serial.println();
+    Serial.println ("In main loop, ready to look for button presses:");
+    Serial.print ("menurow = "); Serial.print(menurow); Serial.print(", menucol = "); Serial.println (menucol);
+  
+// Identifies the chosen movements within the menu system, leading to the desired action:
 
-//void loop(){
-//for (int i = 0; i < 6; i++){
-  // Serial.println(myStrings[i]);
-   //delay(500);
-
-
-      
-
-      menulevel = 0;
-      menuitem = 0;
-      
-      //String statename = statename0;  //Sets state to 0 at start of every loop cycle.
-
-
-      int x = analogRead(0);   
-
-
-      // Determine movement within menus, based on analogue read:
-      if (x<50) {  menulevel = menulevel + 1;}         // Right - display action or sub-menu header
-      else if (x<200) {  menuitem = menuitem - 1;}   // Up - if exists, display menu option above, else stay
-      else if (x<400) {  menuitem = menuitem + 1;}   // Down - if exists, display menu option below, else stay
-      else if (x<600) {  menulevel = menulevel - 1;}   // Left - if exists, display next higher menu level, else stay
-      else if (x<800) {  ???;}   // Select - if action, do, else ????
-      else if (x>1000){ ???;}    // No Press - stay.
-
-
-      // Output:  Only produced if the state has changed and a button has been pressed.
-  if (statename != laststatename && statename != statename6) {  
-
-      //Serial Monitor output:            
-      Serial.print ("x = "); Serial.print (x); Serial.print ("  ");
-      Serial.println (statename);
+    //  Read the analog value produced by pressing the button.
     
+    do{
+    returnval = analogRead(0);
+    } while (returnval > 1000);
+  
+   Serial.println();
+   Serial.print ("Got returnval = "); Serial.print(returnval);
+
+    do{
+    if (returnval == 0) {  //i.e. Right
+      menucol = menucol + 1;
+      if (menucol > menucolmax) {
+        menucol = menucolmax;
+      }}
+    else if (returnval > 0 && returnval < 150) { // i.e. Up
+      menurow = menurow - 1;
+      if (menurow < menurowmin) {
+        menurow = menurowmin;
+      }}
+    else if (returnval > 150 && returnval < 300) { // i.e. Down
+      menurow = menurow + 1;
+      if (menurow > menurowmax) {
+        menurow = menurowmax;
+      }}
+    else if (returnval > 350 && returnval < 450) {  //i.e. Left
+      menucol = menucol - 1;
+      if (menucol < menucolmin) {
+        menucol = menucolmin;
+      }}
+  
+  // Extract the relevant menu text using menurow, meucol:
+    if (menucol == 0) {
+      menutext = Menu_Column_1[menurow];
+    }
+    else if (menucol == 1) {
+      menutext = Menu_Column_2[menurow];
+    }
+  Serial.println();
+  Serial.print("End of menuposition loop, menurow =  "); Serial.print(menurow); Serial.print(", menucol =  "); Serial.println(menucol);
+  
+  if (returnval > 450 && returnval < 650) {  //i.e. Select
+    do_menu_action();
+  }
+  delay(50);
+ 
+     // Output:  Only produced if the menu selection has changed.
+    Serial.println();
+    Serial.println ("In Output section of main loop:");
+
+    if (menurow != menurowlast && menucol != menucollast) {
+
+      //Serial Monitor output:
+      Serial.println();
+      Serial.println ("In Output section of main loop:");
+      Serial.print ("Menu column is: "); Serial.println (menucol);
+      Serial.print ("Menu row is: "); Serial.println (menurow);
+      Serial.print ("Menu reads: "); Serial.println (menutext);
+
       // LCD output:
       lcd.clear();
-      LCDline1 = ("x = "); 
-      LCDline2 = (statename);
-      LCDprintfunction();
-      lcd.setCursor(7,0); lcd.print(x);
-      delay (50);
-      }
-      //Reemember the current state for the next loop
-      laststatename = statename;
+      LCDline1 = (menutext);
+      LCDline2 = (" ");
+      lcd.clear();
+  lcd.print(LCDline1);
+  lcd.setCursor(0, 1);
+  lcd.print(LCDline2);
 
-  }
-}
+      delay (1000);
+    }
+    } while (returnval <1000);
+    
+    //Reemember the current state for the next loop
 
-  
+    menurowlast = menurow;
+    menucollast = menucol;
+
+  }  // end of void loop
+
+
+
