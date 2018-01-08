@@ -127,6 +127,7 @@ re_initiate:  //Following "Select" on the "Exit" menu option, need to go back to
    
     while (returnval == 1023) {  //This loop is to "wait" till a button is pressed.
     // Do Nothing!
+    delay(50);
     goto re_read_1;
     }
 
